@@ -11,8 +11,8 @@ def arg_parse():
     parser = argparse.ArgumentParser(description='Start Training')
     parser.add_argument('--thresh', type=float, default=0.5)
     parser.add_argument('--score', type=float, default=0.5)
-    parser.add_argument('--origin_result', default='/home/wyw/mnt_sdd_wyw/coderepo/mmdetection/result/result.pkl.json', type=str)
-    parser.add_argument('--final_result', default='/home/wyw/mnt_sdd_wyw/coderepo/mmdetection/result/result_final.json', type=str)
+    parser.add_argument('--origin_result', default='../result/result.pkl.json', type=str)
+    parser.add_argument('--final_result', default='../result/result_final.json', type=str)
     args = parser
     return args
 

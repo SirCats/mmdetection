@@ -1,4 +1,5 @@
 # model settings
+normalize = dict(type='GN', num_groups=32, frozen=False)
 model = dict(
     type='CascadeRCNN',
     num_stages=3,
@@ -11,7 +12,13 @@ model = dict(
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        style='pytorch'),
+        style='pytorch',
+        dcn=dict(
+            modulated=False,
+            groups=64,
+            deformable_groups=1,
+            fallback_on_stride=False),
+        stage_with_dcn=(False, True, True, True)),
     neck=dict(
         type='FPN',
         in_channels=[256, 512, 1024, 2048],
@@ -39,7 +46,7 @@ model = dict(
             in_channels=256,
             fc_out_channels=1024,
             roi_feat_size=7,
-            num_classes=81,
+            num_classes=2,
             target_means=[0., 0., 0., 0.],
             target_stds=[0.1, 0.1, 0.2, 0.2],
             reg_class_agnostic=True),
@@ -49,7 +56,7 @@ model = dict(
             in_channels=256,
             fc_out_channels=1024,
             roi_feat_size=7,
-            num_classes=81,
+            num_classes=2,
             target_means=[0., 0., 0., 0.],
             target_stds=[0.05, 0.05, 0.1, 0.1],
             reg_class_agnostic=True),
@@ -59,7 +66,7 @@ model = dict(
             in_channels=256,
             fc_out_channels=1024,
             roi_feat_size=7,
-            num_classes=81,
+            num_classes=2,
             target_means=[0., 0., 0., 0.],
             target_stds=[0.033, 0.033, 0.067, 0.067],
             reg_class_agnostic=True)
@@ -104,6 +111,7 @@ train_cfg = dict(
                 ignore_iof_thr=-1),
             sampler=dict(
                 type='RandomSampler',
+                # type='OHEMSampler',
                 num=512,
                 pos_fraction=0.25,
                 neg_pos_ub=-1,
@@ -120,6 +128,7 @@ train_cfg = dict(
                 ignore_iof_thr=-1),
             sampler=dict(
                 type='RandomSampler',
+                # type='OHEMSampler',
                 num=512,
                 pos_fraction=0.25,
                 neg_pos_ub=-1,
@@ -136,6 +145,7 @@ train_cfg = dict(
                 ignore_iof_thr=-1),
             sampler=dict(
                 type='RandomSampler',
+                # type='OHEMSampler',
                 num=512,
                 pos_fraction=0.25,
                 neg_pos_ub=-1,
@@ -155,22 +165,23 @@ test_cfg = dict(
         min_bbox_size=0),
     rcnn=dict(
         score_thr=0.05,
-        nms=dict(type='nms', iou_thr=0.5),
+        # nms=dict(type='nms', iou_thr=0.5),
+        nms=dict(type='soft_nms', iou_thr=0.5, min_score=0.05),
         max_per_img=100,
         mask_thr_binary=0.5),
     keep_all_stages=False)
 # dataset settings
 dataset_type = 'CocoDataset'
-data_root = 'data/coco/'
+data_root = 'data/art/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 data = dict(
-    imgs_per_gpu=2,
-    workers_per_gpu=2,
+    imgs_per_gpu=1,
+    workers_per_gpu=1,
     train=dict(
         type=dataset_type,
-        ann_file=data_root + 'annotations/instances_train2017.json',
-        img_prefix=data_root + 'train2017/',
+        ann_file=data_root + 'art_train2014.json',
+        img_prefix=data_root + 'train/',
         img_scale=(1333, 800),
         img_norm_cfg=img_norm_cfg,
         size_divisor=32,
@@ -180,8 +191,8 @@ data = dict(
         with_label=True),
     val=dict(
         type=dataset_type,
-        ann_file=data_root + 'annotations/instances_val2017.json',
-        img_prefix=data_root + 'val2017/',
+        ann_file=data_root + 'art_val2014.json',
+        img_prefix=data_root + 'val/',
         img_scale=(1333, 800),
         img_norm_cfg=img_norm_cfg,
         size_divisor=32,
@@ -191,8 +202,8 @@ data = dict(
         with_label=True),
     test=dict(
         type=dataset_type,
-        ann_file=data_root + 'annotations/instances_val2017.json',
-        img_prefix=data_root + 'val2017/',
+        ann_file=data_root + 'art_coco_test.json',
+        img_prefix=data_root + 'test/',
         img_scale=(1333, 800),
         img_norm_cfg=img_norm_cfg,
         size_divisor=32,
@@ -201,7 +212,7 @@ data = dict(
         with_label=False,
         test_mode=True))
 # optimizer
-optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(type='SGD', lr=0.002, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
@@ -209,7 +220,7 @@ lr_config = dict(
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=1.0 / 3,
-    step=[8, 11])
+    step=[6, 9])
 checkpoint_config = dict(interval=1)
 # yapf:disable
 log_config = dict(
@@ -223,7 +234,7 @@ log_config = dict(
 total_epochs = 12
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/cascade_mask_rcnn_r50_fpn_1x'
+work_dir = './work_dirs/cascade_mask_rcnn_icdar_art'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
